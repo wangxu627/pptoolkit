@@ -12,8 +12,8 @@ UINT_PTR g_hTimer;
 
 void FillItem(HWND hList)
 {
-	SECURITY_ATTRIBUTES saAttr = {0};
-    saAttr.nLength = sizeof(saAttr);
+    SECURITY_ATTRIBUTES saAttr = {0};
+	saAttr.nLength = sizeof(saAttr);
     saAttr.bInheritHandle = TRUE;
     saAttr.lpSecurityDescriptor = NULL;
     
@@ -108,6 +108,7 @@ void FillItem(HWND hList)
 
 		line_idx++;
     } 
+	delete [] buffer;
 }
 
 BOOL RefreshList(HWND hWnd,UINT)
@@ -211,109 +212,3 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE,LPSTR lpCmdLine,int nShowCmd)
 
     return 0;
 }
-
-#if 0
-
-#include <stdio.h>
-#include <windows.h>
-
-#define BUFSIZE 4096
-
-int main(int argc,char* argv[])
-{
- //   char* pp = NULL;
- //   pp = (char*)malloc(0);
-    
-    SECURITY_ATTRIBUTES saAttr = {0};
-    saAttr.nLength = sizeof(saAttr);
-    saAttr.bInheritHandle = TRUE;
-    saAttr.lpSecurityDescriptor = NULL;
-    
-    HANDLE ChildIn_Read,ChildIn_Write;
-    ::CreatePipe(&ChildIn_Read,&ChildIn_Write,&saAttr,0);
-    ::SetHandleInformation(ChildIn_Write,HANDLE_FLAG_INHERIT,0);
- 
-    HANDLE ChildOut_Read,ChildOut_Write;
-    ::CreatePipe(&ChildOut_Read,&ChildOut_Write,&saAttr,0);
-    ::SetHandleInformation(ChildOut_Read,HANDLE_FLAG_INHERIT,0);
-
-
-    STARTUPINFO si = {sizeof(si)};
-    si.hStdError = ChildOut_Write;
-    si.hStdOutput = ChildOut_Write;
-    si.hStdInput = ChildIn_Read;
-    si.dwFlags |= STARTF_USESTDHANDLES;
-    
-    PROCESS_INFORMATION pi;
-    WCHAR szCmd[] = TEXT("netstat -an");
-    ::CreateProcess(
-        NULL,
-        szCmd,
-        NULL,
-        NULL,
-        TRUE,
-        0,
-        NULL,
-        NULL,
-        &si,
-        &pi);
-        
-    //char buffer[BUFSIZE] = {0};
-    char* buffer = new char[BUFSIZE];
-    DWORD dwReaded = 0;
-    
-  /*  string buf;
-    do
-    {
-        BOOL bRet = ::ReadFile(ChildOut_Read,buffer,BUFSIZE,&dwReaded,NULL);  
-        buf += buffer;
-    }while(dwReaded != 0);*/
-       
-    BOOL bRet = ::ReadFile(ChildOut_Read,buffer,BUFSIZE,&dwReaded,NULL);  
-    
-    int i = 4;
-    char* pb = buffer;
-    while(i-- > 0)
-    {
-        pb = strchr(pb,'\n');
-        ++pb;
-    }
-    
-    pb--;
-    while(pb)
-    {
-        char line_buf[128];
-        char* pbo = pb;
-        pb = strchr(pb + 1,'\n');
-        if(pb == NULL)
-        {
-            break;
-        }
-        int diff = pb - pbo;
-        memcpy(line_buf,pbo,diff);
-        line_buf[diff] = 0;
-        //printf(line_buf);
-
-        char proc[4] = {0};
-        char local_addr[23] = {0};
-        char forei_addr[23] = {0};
-        char state[12] = {0};
-        memcpy(proc,        line_buf + 3,    4  ); proc[3] = 0;
-        memcpy(local_addr,  line_buf + 10,   23 ); local_addr[22] = 0;
-        memcpy(forei_addr,  line_buf + 33,   23 ); forei_addr[22] = 0;
-        memcpy(state,       line_buf + 56,   12 ); state[11] = 0;
-        
-        printf("%s | %s | %s | %s\n",proc,local_addr,forei_addr,state);
-
-    } 
-   
-    FILE* fp = fopen("output.txt","w");
-    fwrite(buffer,1,dwReaded,fp);
-    fclose(fp);
-        
-    delete [] buffer;
-
-    
-    getchar();
-}
-#endif
